@@ -1,6 +1,8 @@
 pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
+import 'test/VendorRegistration.sol';
+import 'test/VendorPrices.sol';
 
 /// @title Market Place contract. This is where users buy products from registered vendors.
 /// @notice This is where users buy products from registered vendors.
