@@ -28,7 +28,7 @@ contract PipedContract {
 
         signature42 = bytes4(keccak256("pipe_uint256(uint256)"));
         input42 = abi.encodeWithSelector(signature42, input_uint);
-        answer42 = pipe_proxy.proxyCallInternal(Utils_address, input42, 32);
+        answer42 = pipe_proxy.proxy(Utils_address, input42, 32);
         uint256 output_uint;
         assembly {
             output_uint := mload(add(answer42, 32))
@@ -36,7 +36,7 @@ contract PipedContract {
 
         signature42 = bytes4(keccak256("getQuantity(address,uint256)"));
         input42 = abi.encodeWithSelector(signature42, vendor_3,output_uint);
-        answer42 = pipe_proxy.proxyCallInternal(MarketPlace_address, input42, 32);
+        answer42 = pipe_proxy.proxy(MarketPlace_address, input42, 32);
         uint256 quantity_2;
         assembly {
             quantity_2 := mload(add(answer42, 32))
@@ -44,7 +44,7 @@ contract PipedContract {
 
         signature42 = bytes4(keccak256("getQuantity(address,uint256)"));
         input42 = abi.encodeWithSelector(signature42, vendor_2,output_uint);
-        answer42 = pipe_proxy.proxyCallInternal(MarketPlace_address, input42, 32);
+        answer42 = pipe_proxy.proxy(MarketPlace_address, input42, 32);
         uint256 quantity;
         assembly {
             quantity := mload(add(answer42, 32))
@@ -55,6 +55,6 @@ contract PipedContract {
 
         signature42 = bytes4(keccak256("setQuantity(address,uint256,uint256)"));
         input42 = abi.encodeWithSelector(signature42, vendor,output_uint,z);
-        pipe_proxy.proxyCallInternal(MarketPlace_address, input42, 32);
+        pipe_proxy.proxy(MarketPlace_address, input42, 32);
     }
 }

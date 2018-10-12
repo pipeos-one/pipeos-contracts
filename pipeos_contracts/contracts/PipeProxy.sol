@@ -7,7 +7,7 @@ contract PipeProxy  {
     uint256 public table_functions = 12;
     uint256 public table_ios = 13;
 
-    function proxyCallInternal(address _to, bytes input_bytes, uint256 output_size) payable public returns (bytes) {
+    function proxy(address _to, bytes input_bytes, uint256 output_size) payable public returns (bytes) {
         uint256 value = msg.value;
         assembly {
             let zero_mem_pointer := 0x80

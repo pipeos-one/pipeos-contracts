@@ -29,8 +29,7 @@ contract VendorRegistration {
     /// @param product_id The id of the product registered in the system.
     function registerVendor(address vendor, uint256 product_id) public {
         if (table[product_id].length == 0) {
-            address[] storage addresses;
-            table[product_id] = addresses;
+            table[product_id] = new address[](0);
         }
         table[product_id].push(vendor);
         emit VendorRegistered(product_id, vendor);

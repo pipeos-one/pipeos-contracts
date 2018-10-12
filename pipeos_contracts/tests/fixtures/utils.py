@@ -84,15 +84,11 @@ def deploy_contract(web3, owner):
     def fn(
             abi,
             bytecode,
-            args,
+            args=[],
     ):
-        if args is None:
-            args = []
-
         contract = web3.eth.contract(abi=abi, bytecode=bytecode)
-        txhash = deploy_contract_txhash(web3, deployer_address, abi, bytecode, args)
-
         txhash = contract.constructor(*args).transact({'from': owner})
+
         contract_address = web3.eth.getTransactionReceipt(txhash).contractAddress
         web3.testing.mine(1)
 
