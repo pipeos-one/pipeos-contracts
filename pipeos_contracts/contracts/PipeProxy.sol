@@ -2,13 +2,20 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 
-contract PipeProxy  {
-    uint256 public table_contracts = 11;
-    uint256 public table_functions = 12;
-    uint256 public table_ios = 13;
+contract PipeProxy {
 
-    function proxy(address _to, bytes input_bytes, uint256 output_size) payable public returns (bytes) {
+    function proxy(
+        address _to,
+        bytes input_bytes,
+        uint256 gas_value
+    )
+        payable
+        public
+        returns (bytes)
+    {
         uint256 value = msg.value;
+        bytes memory output;
+        uint256 output_len;
         assembly {
             let zero_mem_pointer := 0x80
 
@@ -16,19 +23,25 @@ contract PipeProxy  {
             let input_ptr := add(zero_mem_pointer, 32)
 
             let result := call(
-              100000, // gas limit
-              _to,  // to addr. append var to _slot to access storage variable
-              value, // not transfer any ether
-              input_ptr, // Inputs are stored at location ptr
-              input_size, // Input size
-              input_ptr,  //Store output
-              output_size
+              gas_value, // gas limit
+              _to,  // contract address to call
+              value, // value of transferred ETH
+              input_ptr, // inputs are stored at location input_ptr
+              input_size, // input size
+              0,  // store output at pointer 0x0
+              0  // expected output size set to 0, because we will use returndatasize
             )
 
-            mstore(sub(zero_mem_pointer, 32), 32)
-            mstore(zero_mem_pointer, output_size)
-
-            return(sub(zero_mem_pointer, 32), add(64, output_size))
+            output_len := returndatasize
         }
+
+        output = new bytes(output_len);
+
+        assembly {
+            // copy return data content after output length (first 32 bytes)
+            returndatacopy(add(output, 32), 0, output_len)
+        }
+
+        return output;
     }
 }

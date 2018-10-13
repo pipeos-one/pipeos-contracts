@@ -13,36 +13,8 @@ contract TestPipeProxy {
         test_contract = _test_contract;
     }
 
-    function m_addr() view public returns(bytes32 addr) {
-        bytes4 signature = bytes4(keccak256("m_addr()"));
-        bytes memory input = abi.encodePacked(signature);
-        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
-        assembly {
-            addr := mload(add(answer, 32))
-        }
-    }
-
-    function s_addr() view public returns(bytes32 addr) {
-        bytes4 signature = bytes4(keccak256("s_addr()"));
-        bytes memory input = abi.encodePacked(signature);
-        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
-        assembly {
-            addr := mload(add(answer, 32))
-        }
-    }
-
-    function addr_addr() view public returns(bytes32 addr1, bytes32 addr2) {
-        bytes4 signature = bytes4(keccak256("addr_addr()"));
-        bytes memory input = abi.encodePacked(signature);
-        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
-        assembly {
-            addr1 := mload(add(answer, 32))
-            addr2 := mload(add(answer, 64))
-        }
-    }
-
-    function m_uint(uint256 value) view public returns(bytes32 val) {
-        bytes4 signature = bytes4(keccak256("m_uint(uint256)"));
+    function m_uint256(uint256 value) view public returns(uint256 val) {
+        bytes4 signature = bytes4(keccak256("m_uint256(uint256)"));
         bytes memory input = abi.encodeWithSelector(signature, value);
         bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
         assembly {
@@ -50,8 +22,8 @@ contract TestPipeProxy {
         }
     }
 
-    function s_uint() view public returns(bytes32 val) {
-        bytes4 signature = bytes4(keccak256("s_uint()"));
+    function s_uint256() view public returns(uint256 val) {
+        bytes4 signature = bytes4(keccak256("s_uint256()"));
         bytes memory input = abi.encodeWithSelector(signature);
         bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
         assembly {
@@ -59,21 +31,61 @@ contract TestPipeProxy {
         }
     }
 
-    function addr_uint() view public returns(bytes32 addr, bytes32 val) {
-        bytes4 signature = bytes4(keccak256("addr_uint()"));
+    function m_addr(address value) view public returns(address addr) {
+        bytes4 signature = bytes4(keccak256("m_addr(address)"));
+        bytes memory input = abi.encodeWithSelector(signature, value);
+        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
+        assembly {
+            addr := mload(add(answer, 32))
+        }
+    }
+
+    function s_addr() view public returns(address addr) {
+        bytes4 signature = bytes4(keccak256("s_addr()"));
         bytes memory input = abi.encodeWithSelector(signature);
         bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
         assembly {
             addr := mload(add(answer, 32))
-            val := mload(add(answer, 64))
         }
     }
 
-    function m_uint_arr(uint256[4] uint_arr) view public returns(bytes32[4] arr_val) {
-        bytes4 signature = bytes4(keccak256("m_uint_arr(uint256[4])"));
+    function addr_addr(address value) view public returns(address addr1, address addr2) {
+        bytes4 signature = bytes4(keccak256("addr_addr(address)"));
+        bytes memory input = abi.encodeWithSelector(signature, value);
+        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
+        assembly {
+            addr1 := mload(add(answer, 32))
+            addr2 := mload(add(answer, 64))
+        }
+    }
+
+    function addr_uint_uint(uint256 value) view public returns(address addr, uint256 val1, uint256 val2) {
+        bytes4 signature = bytes4(keccak256("addr_uint_uint(uint256)"));
+        bytes memory input = abi.encodeWithSelector(signature, value);
+        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
+        assembly {
+            addr := mload(add(answer, 32))
+            val1 := mload(add(answer, 64))
+            val2 := mload(add(answer, 96))
+        }
+    }
+
+    function addr_uint_bytes32(bytes32 value) view public returns(address addr, uint256 val, bytes32 byte_value) {
+        bytes4 signature = bytes4(keccak256("addr_uint_bytes32(bytes32)"));
+        bytes memory input = abi.encodeWithSelector(signature, value);
+        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
+        assembly {
+            addr := mload(add(answer, 32))
+            val := mload(add(answer, 64))
+            byte_value := mload(add(answer, 96))
+        }
+    }
+
+    function m_uint256_arr_static(uint256[4] uint_arr) view public returns(uint256[4] arr_val) {
+        bytes4 signature = bytes4(keccak256("m_uint256_arr_static(uint256[4])"));
         bytes memory input = abi.encodeWithSelector(signature, uint_arr);
         bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
-        bytes32 val;
+        uint256 val;
         for (uint256 i = 1; i <= uint_arr.length; i++) {
             assembly {
                 val := mload(add(answer, mul(32, i)))
@@ -82,8 +94,8 @@ contract TestPipeProxy {
         }
     }
 
-    function dynamic_uint_arr(uint256 value) public returns(uint256[] arr_val) {
-        bytes4 signature = bytes4(keccak256("dynamic_uint_arr(uint256)"));
+    function s_uint256_arr_dynamic(uint256 value) public returns(uint256[] arr_val) {
+        bytes4 signature = bytes4(keccak256("s_uint256_arr_dynamic(uint256)"));
         bytes memory input = abi.encodeWithSelector(signature, value);
         bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
         uint256 array_length;
