@@ -1,0 +1,33 @@
+dist: xenial
+sudo: true
+language: python
+python:
+  - '3.6'
+
+env:
+  global:
+    - TEST_TYPE=pipeos_contracts
+    - SOLC_URL='https://github.com/ethereum/solidity/releases/download/v0.4.25/solc-static-linux'
+    - SOLC_VERSION='v0.4.25'
+
+cache:
+  pip: true
+  directories:
+    - $HOME/.cache/pip
+
+before_install:
+  - mkdir -p $HOME/.bin
+  - export PATH=$PATH:$HOME/.bin
+  - ./.travis/download_solc.sh
+
+install:
+  - pip install -U pip wheel coveralls "coverage<4.4"
+  - pip install pytest-travis-fold
+  - pip install -r requirements-dev.txt
+  - pip install pytest-xdist pytest-sugar
+
+before_script:
+  - flake8 pipeos_contracts/
+
+script:
+  - coverage run --source pipeos_contracts/ -m py.test -Wd --travis-fold=always -n 2 -v $TEST_TYPE
