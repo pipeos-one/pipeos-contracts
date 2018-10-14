@@ -1,9 +1,5 @@
-import hashlib
-import json
-import logging
-from json import JSONDecodeError
 from pathlib import Path
-from typing import Dict, Union, Optional
+from typing import Dict
 
 from solc import compile_files
 
@@ -52,7 +48,7 @@ class ContractManager:
                 }
                 self.contracts.update(_fix_contract_key_names(res))
         except FileNotFoundError as ex:
-            raise ContractManagerCompilationError(
+            raise FileNotFoundError(
                 'Could not compile the contract. Check that solc is available.',
             ) from ex
 

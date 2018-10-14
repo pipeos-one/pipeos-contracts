@@ -4,9 +4,8 @@ from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
 from web3.utils.threads import Timeout
 
-from eth_utils import denoms, is_same_address
+from eth_utils import is_same_address
 from eth_tester import EthereumTester, PyEVMBackend
-from eth_tester.exceptions import TransactionFailed
 
 from pipeos_contracts.tests.utils.logs import LogHandler
 from pipeos_contracts.tests.fixtures.config import passphrase
@@ -84,8 +83,10 @@ def deploy_contract(web3, owner):
     def fn(
             abi,
             bytecode,
-            args=[],
+            args=None,
     ):
+        if args is None:
+            args = []
         contract = web3.eth.contract(abi=abi, bytecode=bytecode)
         txhash = contract.constructor(*args).transact({'from': owner})
 

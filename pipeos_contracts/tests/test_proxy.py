@@ -1,5 +1,3 @@
-import pytest
-from eth_tester.exceptions import TransactionFailed
 from pipeos_contracts.tests.utils.encoding import encode_with_selector, to_bytes
 
 
