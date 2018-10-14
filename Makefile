@@ -7,4 +7,4 @@ install_dev:
 	pip install -r requirements-dev.txt
 
 lint:
-	flake8 raiden_contracts/
+	flake8 pipeos_contracts/

@@ -31,6 +31,25 @@ contract TestPipeProxy {
         }
     }
 
+    function m_uint8(uint8 value) view public returns(uint8 val) {
+        bytes4 signature = bytes4(keccak256("m_uint8(uint8)"));
+        bytes memory input = abi.encodeWithSelector(signature, value);
+        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
+        assembly {
+            val := mload(add(answer, 32))
+        }
+    }
+
+    function m_uint8_uint8(uint8 value1, uint8 value2) view public returns(uint8 val1, uint8 val2) {
+        bytes4 signature = bytes4(keccak256("m_uint8_uint8(uint8,uint8)"));
+        bytes memory input = abi.encodeWithSelector(signature, value1, value2);
+        bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
+        assembly {
+            val1 := mload(add(answer, 32))
+            val2 := mload(add(answer, 64))
+        }
+    }
+
     function m_addr(address value) view public returns(address addr) {
         bytes4 signature = bytes4(keccak256("m_addr(address)"));
         bytes memory input = abi.encodeWithSelector(signature, value);

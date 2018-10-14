@@ -29,6 +29,14 @@ contract TestFunctions {
         return svar;
     }
 
+    function m_uint8(uint8 value) pure public returns(uint8) {
+        return value;
+    }
+
+    function m_uint8_uint8(uint8 value1, uint8 value2) pure public returns(uint8, uint8) {
+        return (value1, value2);
+    }
+
     function m_addr(address value) pure public returns(address) {
         return value;
     }
