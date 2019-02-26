@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
-import 'test/VendorRegistration.sol';
-import 'test/VendorPrices.sol';
+import './VendorRegistration.sol';
+import './VendorPrices.sol';
+
 
 /// @title Market Place contract. This is where users buy products from registered vendors.
 /// @notice This is where users buy products from registered vendors.
@@ -61,7 +61,7 @@ contract MarketPlace {
     /// @param vendor The Ethereum address of the vendor.
     /// @param product_id The id of the product registered in the system.
     /// @return key The key for the available_quantities mapping
-    function getKey(address vendor, uint256 product_id) view public returns (bytes32 key) {
+    function getKey(address vendor, uint256 product_id) pure public returns (bytes32 key) {
         return keccak256(abi.encodePacked(vendor, product_id));
     }
 }

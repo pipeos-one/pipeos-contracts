@@ -1,5 +1,4 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
 
 /// @title Vendor Prices contract. This is where vendors register their product prices in the system.

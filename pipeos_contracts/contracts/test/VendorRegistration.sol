@@ -1,5 +1,4 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
 
 /// @title Vendor Registration contract. This is where vendors are registered in the system.
