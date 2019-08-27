@@ -2,7 +2,7 @@ import pytest
 
 from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
-from web3.utils.threads import Timeout
+from web3._utils.threads import Timeout
 
 from eth_utils import is_same_address
 from eth_tester import EthereumTester, PyEVMBackend
@@ -49,14 +49,14 @@ def get_accounts(web3, owner):
     def get(number):
         new_accounts = []
         for _ in range(0, number):
-            new_account = web3.personal.newAccount(passphrase)
+            new_account = web3.geth.personal.newAccount(passphrase)
             amount = int(web3.eth.getBalance(web3.eth.accounts[0]) / 2 / number)
             web3.eth.sendTransaction({
                 'from': web3.eth.accounts[1],
                 'to': new_account,
                 'value': amount,
             })
-            web3.personal.unlockAccount(new_account, passphrase)
+            web3.geth.personal.unlockAccount(new_account, passphrase)
             new_accounts.append(new_account)
         return new_accounts
     return get

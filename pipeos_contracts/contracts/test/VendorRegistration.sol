@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.4;
 
 
 /// @title Vendor Registration contract. This is where vendors are registered in the system.
@@ -18,7 +18,7 @@ contract VendorRegistration {
     /// @return vendor The Ethereum address of the vendor.
     function getVendor(uint256 product_id) view public returns (address vendor) {
         if (table[product_id].length == 0) {
-            return 0x0;
+            return address(0x0);
         }
         return table[product_id][0];
     }

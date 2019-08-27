@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.4;
 pragma experimental ABIEncoderV2;
 
 import 'pipeos/PipeProxy.sol';
@@ -100,7 +100,7 @@ contract TestPipeProxy {
         }
     }
 
-    function m_uint256_arr_static(uint256[4] uint_arr) view public returns(uint256[4] arr_val) {
+    function m_uint256_arr_static(uint256[4] memory uint_arr) view public returns(uint256[4] memory arr_val) {
         bytes4 signature = bytes4(keccak256("m_uint256_arr_static(uint256[4])"));
         bytes memory input = abi.encodeWithSelector(signature, uint_arr);
         bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
@@ -113,7 +113,7 @@ contract TestPipeProxy {
         }
     }
 
-    function s_uint256_arr_dynamic(uint256 value) public returns(uint256[] arr_val) {
+    function s_uint256_arr_dynamic(uint256 value) public returns(uint256[] memory arr_val) {
         bytes4 signature = bytes4(keccak256("s_uint256_arr_dynamic(uint256)"));
         bytes memory input = abi.encodeWithSelector(signature, value);
         bytes memory answer = pipe_proxy.proxy(test_contract, input, 70000);
@@ -126,6 +126,7 @@ contract TestPipeProxy {
             // then we have the array length
             array_length := mload(add(answer, 64))
         }
+        require(array_length > 0, 'Something bad');
         arr_val = new uint256[](array_length);
 
         for (uint256 i = 0; i < array_length; i++) {

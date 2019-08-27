@@ -34,5 +34,5 @@ make lint
 
 ```
 pytest
-pytest pipeos_contracts/tests/test_proxy.py
+pytest pipeos_contracts/tests/test_proxy.py --showlocals -s
 ```

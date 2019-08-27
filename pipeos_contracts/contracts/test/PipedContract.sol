@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.4;
 pragma experimental ABIEncoderV2;
 
 import 'pipeos/PipeProxy.sol';
@@ -15,7 +15,7 @@ contract PipedContract {
         Utils_address = _Utils_address;
     }
 
-    function add (uint256 x, uint256 y) pure public returns(uint256 z) {
+    function addUint(uint256 x, uint256 y) pure public returns(uint256 z) {
         z = x + y;
     }
 
@@ -51,7 +51,7 @@ contract PipedContract {
         }
 
         uint256 z;
-        (z) = add(quantity,quantity_2);
+        (z) = addUint(quantity,quantity_2);
 
         signature42 = bytes4(keccak256("setQuantity(address,uint256,uint256)"));
         input42 = abi.encodeWithSelector(signature42, vendor,output_uint,z);
