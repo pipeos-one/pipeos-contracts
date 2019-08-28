@@ -128,9 +128,9 @@ def test_view_mix_tuple_address_uint_uint(
         encode_with_selector('addr_uint_uint', ['uint256'], [io]),
         0,
     ).call() == (
-        to_bytes(hexstr=out[0]) +
-        to_bytes(out[1]) +
-        to_bytes(out[2]),
+        to_bytes(hexstr=out[0])
+        + to_bytes(out[1])
+        + to_bytes(out[2]),
     )
     assert piped_test_contract.functions.addr_uint_uint(io).call() == out
 
@@ -147,9 +147,9 @@ def test_view_mix_tuple_address_uint_bytes32(
         encode_with_selector('addr_uint_bytes32', ['bytes32'], [io]),
         0,
     ).call() == (
-        to_bytes(hexstr=out[0]) +
-        to_bytes(out[1]) +
-        out[2],
+        to_bytes(hexstr=out[0])
+        + to_bytes(out[1])
+        + out[2],
     )
     assert piped_test_contract.functions.addr_uint_bytes32(io).call() == out
 

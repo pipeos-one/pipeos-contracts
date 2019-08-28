@@ -110,8 +110,8 @@ def check_succesful_tx(web3: Web3, txid: str, timeout=180) -> dict:
 
 def wait_for_transaction_receipt(web3, txid, timeout=180):
     with Timeout(timeout) as time:
-            while not web3.eth.getTransactionReceipt(txid):
-                time.sleep(5)
+        while not web3.eth.getTransactionReceipt(txid):
+            time.sleep(5)
 
     return web3.eth.getTransactionReceipt(txid)
 
