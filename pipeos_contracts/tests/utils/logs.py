@@ -1,9 +1,9 @@
 import functools
 from collections import defaultdict
-from web3.utils.events import get_event_data
-from web3.utils.filters import construct_event_filter_params
+from web3._utils.events import get_event_data
+from web3._utils.filters import construct_event_filter_params
 from inspect import getframeinfo, stack
-from web3.utils.threads import (
+from web3._utils.threads import (
     Timeout,
 )
 

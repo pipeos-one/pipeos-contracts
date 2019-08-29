@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.4;
 pragma experimental ABIEncoderV2;
 
 
@@ -17,7 +17,7 @@ contract TestFunctions {
         addr = msg.sender;
     }
 
-    function get_arr() view public returns(uint256[]) {
+    function get_arr() view public returns(uint256[] memory) {
         return arr;
     }
 
@@ -57,11 +57,11 @@ contract TestFunctions {
         return (addr, svar, value);
     }
 
-    function m_uint256_arr_static(uint256[4] uint_arr) pure public returns(uint256[4]) {
+    function m_uint256_arr_static(uint256[4] memory uint_arr) pure public returns(uint256[4] memory) {
         return uint_arr;
     }
 
-    function s_uint256_arr_dynamic(uint256 value) public returns(uint256[]) {
+    function s_uint256_arr_dynamic(uint256 value) public returns(uint256[] memory) {
         arr.push(value);
         return arr;
     }

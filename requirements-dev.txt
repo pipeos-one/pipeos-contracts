@@ -1,6 +1,5 @@
 -r requirements.txt
-eth-tester[py-evm]==0.1.0-beta.32,<1.0
-ethereum<2.0.0,>=1.6.1
+eth-tester[py-evm]==0.1.0b39
 pytest
 flake8
 flake8-commas>=2.0.0
