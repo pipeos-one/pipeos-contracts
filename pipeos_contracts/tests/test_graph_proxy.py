@@ -6,12 +6,6 @@ from pipeos_contracts.tests.utils.encoding import (
 )
 
 
-# TODO:
-# multiple outputs
-# abi_decode - make sure results can be extracted (static + dynamic)
-# payable + non-payable transactions
-
-
 def test_getStaticArgument(pipe_graph_proxy_contract):
     product_id = 1
     wei_value = 100
