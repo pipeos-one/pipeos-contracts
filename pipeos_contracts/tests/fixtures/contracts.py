@@ -91,3 +91,13 @@ def market_contract(
         [vendor_reg_contract.address, vendor_prices_contract.address],
     )
     return contract
+
+
+@pytest.fixture
+def pipegraph_proxy_test(contracts_manager, deploy_contract):
+    json_contract = contracts_manager.get_contract('PipeGraphProxyTest')
+    (contract, txn_hash) = deploy_contract(
+        json_contract['abi'],
+        json_contract['bin'],
+    )
+    return contract

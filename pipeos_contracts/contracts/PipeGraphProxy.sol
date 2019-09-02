@@ -18,9 +18,9 @@ contract PipeGraphProxy {
         // packed encoded inputs
         bytes inputs;
         bool[] inputIsStatic;
-        // starts are of length inputIsStatic.length + 1
-        uint8[] starts;
         uint8[] outputIndexes;
+        // starts are of length inputIsStatic.length + 1
+        uint16[] starts;
         Step[] steps;
     }
 
@@ -48,10 +48,10 @@ contract PipeGraphProxy {
             length += script.steps[i].outputIsStatic.length;
         }
 
-        uint8[] memory starts = new uint8[](length);
+        uint16[] memory starts = new uint16[](length);
         bool[] memory inputIsStatic = new bool[](length - 1);
 
-        uint8 j;
+        uint16 j;
         for (j = 0; j < script.starts.length - 1; j ++) {
             starts[j] = script.starts[j];
             inputIsStatic[j] = script.inputIsStatic[j];
@@ -60,7 +60,7 @@ contract PipeGraphProxy {
 
         for (uint8 i = 0; i < script.steps.length; i ++) {
             // Build inputs needed to make the transaction / call in this step
-            bytes memory inputs = buildInput(script.inputs, script.steps[i].inputIndexes, inputIsStatic, starts);
+            bytes memory inputs = buildAbiIO(script.inputs, script.steps[i].inputIndexes, inputIsStatic, starts);
 
             (bool success, bytes memory output) = script.steps[i].contractAddress.staticcall(
                 abi.encodePacked(script.steps[i].functionSig, inputs)
@@ -68,7 +68,7 @@ contract PipeGraphProxy {
             require(success == true, 'Staticcall failed');
 
             // Get output for step and insert it in the inputs
-            uint8 index = 0;
+            uint16 index = 0;
             for (uint8 out = 0; out < script.steps[i].outputIsStatic.length; out ++) {
                 if (script.steps[i].outputIsStatic[out] == true) {
                     bytes32 addition = getStaticArgument(output, index);
@@ -79,37 +79,96 @@ contract PipeGraphProxy {
                     index += 32;
                     startsLen += 1;
                 } else {
+                    uint16 endIndex = getNextDynamicIndex(output, script.steps[i].outputIsStatic, out);
 
+                    bytes memory addition = getPartialBytes(output, index + 32, endIndex);
+                    script.inputs = abi.encodePacked(script.inputs, addition);
+
+                    starts[startsLen] = starts[startsLen - 1] + uint16(addition.length);
+                    inputIsStatic[startsLen - 1] = false;
+                    index += uint16(addition.length);
+                    startsLen += 1;
                 }
             }
         }
-
-        // Return all the outputs referenced in outputIndexes
-        for (uint8 i = 0; i < script.outputIndexes.length; i ++) {
-            if (inputIsStatic[script.outputIndexes[i]] == true) {
-                result = abi.encodePacked(result, getStaticArgument(script.inputs, starts[script.outputIndexes[i]]));
-            } else {
-                result = abi.encodePacked(
-                    result,
-                    getDynamicArgument(script.inputs, starts[script.outputIndexes[i]], starts[script.outputIndexes[i] + 1])
-                );
-            }
-        }
-        return result;
+        return buildAbiIO(script.inputs, script.outputIndexes, inputIsStatic, starts);
     }
 
-    function getStaticArgument(bytes memory inputs, uint8 startIndex) pure public returns(bytes32 result) {
+    function getStaticArgument(bytes memory inputs, uint16 startIndex) pure public returns(bytes32 result) {
         assembly {
             let freemem_pointer := mload(0x40)
             result := mload(add(inputs, add(startIndex, 32)))
         }
     }
 
-    function getDynamicArgument(bytes memory inputs, uint8 startIndex, uint8 endIndex) pure public returns(bytes memory result) {
-
+    function getNextDynamicIndex(bytes memory output, bool[] memory outputIsStatic, uint8 out)
+        pure public returns(uint16 index)
+    {
+        for (uint16 i = out + 1; i < outputIsStatic.length; i ++) {
+            if (outputIsStatic[i] == false) {
+                uint16 offset;
+                uint16 index = (i + 1) * 32;
+                assembly {
+                    let freemem_pointer := mload(0x40)
+                    offset := mload(add(output, index))
+                }
+                return index + offset;
+            }
+        }
+        return uint16(output.length);
     }
 
-    function buildInput(bytes memory inputs, uint8[] memory inputIndexes, bool[] memory inputIsStatic, uint8[] memory starts) pure public returns(bytes memory result) {
+    // endIndex is not included
+    function getPartialBytes(bytes memory inputs, uint16 startIndex, uint16 endIndex) pure public returns(bytes memory result) {
+        require(inputs.length >= endIndex);
+        require(endIndex >= startIndex);
+
+        uint16 _length = endIndex - startIndex;
+        if (_length == 0) {
+            return result;
+        }
+
+        assembly {
+            // free memory pointer
+            result := mload(0x40)
+
+            // The first word of the slice result is potentially a partial
+            // word read from the original array. To read it, we calculate
+            // the length of that partial word and start copying that many
+            // bytes into the array. The first word we copy will start with
+            // data we don't care about, but the last `lengthmod` bytes will
+            // land at the beginning of the contents of the new array. When
+            // we're done copying, we overwrite the full first word with
+            // the actual length of the slice.
+            let lengthmod := and(_length, 31)
+
+            // The multiplication in the next line is necessary
+            // because when slicing multiples of 32 bytes (lengthmod == 0)
+            // the following copy loop was copying the origin's length
+            // and then ending prematurely not copying everything it should.
+            let mc := add(add(result, lengthmod), mul(0x20, iszero(lengthmod)))
+            let end := add(mc, _length)
+
+            for {
+                // The multiplication in the next line has the same exact purpose
+                // as the one above.
+                let cc := add(add(add(inputs, lengthmod), mul(0x20, iszero(lengthmod))), startIndex)
+            } lt(mc, end) {
+                mc := add(mc, 0x20)
+                cc := add(cc, 0x20)
+            } {
+                mstore(mc, mload(cc))
+            }
+
+            mstore(result, _length)
+
+            //update free-memory pointer
+            //allocating the array padded to 32 bytes like the compiler does now
+            mstore(0x40, and(add(mc, 31), not(31)))
+        }
+    }
+
+    function buildAbiIO(bytes memory inputs, uint8[] memory inputIndexes, bool[] memory inputIsStatic, uint16[] memory starts) pure public returns(bytes memory result) {
         bytes memory heads;
         bytes memory tails;
 
@@ -117,8 +176,12 @@ contract PipeGraphProxy {
             if (inputIsStatic[inputIndexes[i]] == true) {
                 heads = abi.encodePacked(heads, getStaticArgument(inputs, starts[inputIndexes[i]]));
             } else {
-                heads = abi.encodePacked(heads, (inputIndexes.length - i) * 32);
-                tails = abi.encodePacked(tails, getDynamicArgument(inputs, starts[inputIndexes[i]], starts[inputIndexes[i + 1]]));
+                heads = abi.encodePacked(heads, uint256(inputIndexes.length * 32 + tails.length));
+                tails = abi.encodePacked(tails, getPartialBytes(
+                    inputs,
+                    starts[inputIndexes[i]],
+                    starts[inputIndexes[i] + 1]
+                ));
             }
         }
         return abi.encodePacked(heads, tails);
