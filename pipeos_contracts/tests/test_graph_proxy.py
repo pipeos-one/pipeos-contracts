@@ -6,15 +6,15 @@ from pipeos_contracts.tests.utils.encoding import (
 )
 
 
-def test_getStaticArgument(pipe_graph_proxy_contract):
+def test_getSlot(pipe_graph_proxy_contract):
     product_id = 1
     wei_value = 100
     (inputs, _, _) = prepareGraphProxyInputs(
         ['uint256', 'uint256'],
         [product_id, wei_value],
     )
-    prodid = pipe_graph_proxy_contract.functions.getStaticArgument(inputs, 0).call()
-    wei = pipe_graph_proxy_contract.functions.getStaticArgument(inputs, 32).call()
+    prodid = pipe_graph_proxy_contract.functions.getSlot(inputs, 0).call()
+    wei = pipe_graph_proxy_contract.functions.getSlot(inputs, 32).call()
     assert prodid == encode_single('uint256', product_id)
     assert wei == encode_single('uint256', wei_value)
 
@@ -34,7 +34,7 @@ def test_getPartialBytes(pipe_graph_proxy_contract):
         f'Some long string that is bigger than bytes32 and goes on another slot. '
         f'Some long string that is bigger than bytes32 and goes on another slot.'
     )
-    (inputs, starts, inputIsStatic) = prepareGraphProxyInputs(
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
         ['uint256[3]', 'uint256', 'uint256[]', '(bool,bytes,uint16)', 'address', 'string'],
         [static_array, uint, dynamic_array, list(struct.values()), vendor, string],
     )
@@ -82,11 +82,11 @@ def test_getPartialBytes(pipe_graph_proxy_contract):
     assert get_string == encode_single('string', string)
 
 
-def test_buildAbiIO_static(pipe_graph_proxy_contract):
+def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     product_id = 1
     wei_value = 100
     vendor = '0x1111111111111111111111111111111111111111'
-    (inputs, starts, inputIsStatic) = prepareGraphProxyInputs(
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
         ['uint256', 'uint256', 'address'],
         [product_id, wei_value, vendor],
     )
@@ -95,7 +95,7 @@ def test_buildAbiIO_static(pipe_graph_proxy_contract):
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
-        inputIsStatic,
+        inputSizeIsSlot,
         starts,
     ).call()
     assert built_input == encode_single('uint256', product_id)
@@ -104,7 +104,7 @@ def test_buildAbiIO_static(pipe_graph_proxy_contract):
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
-        inputIsStatic,
+        inputSizeIsSlot,
         starts,
     ).call()
     assert built_input == encode_single('uint256', wei_value)
@@ -113,7 +113,7 @@ def test_buildAbiIO_static(pipe_graph_proxy_contract):
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
-        inputIsStatic,
+        inputSizeIsSlot,
         starts,
     ).call()
     assert built_input == encode_single('address', vendor)
@@ -122,7 +122,7 @@ def test_buildAbiIO_static(pipe_graph_proxy_contract):
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
-        inputIsStatic,
+        inputSizeIsSlot,
         starts,
     ).call()
     assert built_input == (
@@ -134,7 +134,7 @@ def test_buildAbiIO_static(pipe_graph_proxy_contract):
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
-        inputIsStatic,
+        inputSizeIsSlot,
         starts,
     ).call()
     assert built_input == (
@@ -144,13 +144,13 @@ def test_buildAbiIO_static(pipe_graph_proxy_contract):
     )
 
 
-def test_buildAbiIO_dynamic(pipe_graph_proxy_contract, pipegraph_proxy_test, get_accounts):
+def test_buildAbiIO_multiple_slots(pipe_graph_proxy_contract, pipegraph_proxy_test, get_accounts):
     uint = 5
     dynamic_array = [5, 6, 7]
     address = get_accounts(1)[0]
     t_struct = [uint, dynamic_array, address]
 
-    (inputs, starts, inputIsStatic) = prepareGraphProxyInputs(
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
         ['uint256[]', 'uint256', 'address'],
         [dynamic_array, uint, address],
     )
@@ -158,7 +158,7 @@ def test_buildAbiIO_dynamic(pipe_graph_proxy_contract, pipegraph_proxy_test, get
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
-        inputIsStatic,
+        inputSizeIsSlot,
         starts,
     ).call()
     tx_data = pipegraph_proxy_test.functions.t_array(
@@ -168,7 +168,7 @@ def test_buildAbiIO_dynamic(pipe_graph_proxy_contract, pipegraph_proxy_test, get
     ).buildTransaction()
     assert Web3.toHex(built_input)[2:] == tx_data['data'][10:]
 
-    (inputs, starts, inputIsStatic) = prepareGraphProxyInputs(
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
         ['(uint256,uint256[],address)'],
         [t_struct],
     )
@@ -176,14 +176,14 @@ def test_buildAbiIO_dynamic(pipe_graph_proxy_contract, pipegraph_proxy_test, get
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
-        inputIsStatic,
+        inputSizeIsSlot,
         starts,
     ).call()
     tx_data = pipegraph_proxy_test.functions.t_struct(t_struct).buildTransaction()
     assert Web3.toHex(built_input)[2:] == tx_data['data'][10:]
 
 
-def test_run_static(
+def test_run_one_slot(
         pipe_graph_proxy_contract,
         vendor_reg_contract,
         vendor_prices_contract,
@@ -198,7 +198,7 @@ def test_run_static(
         wei_value,
     ).call()
 
-    (inputs, starts, inputIsStatic) = prepareGraphProxyInputs(
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
         ['uint256', 'uint256'],
         [product_id, wei_value],
     )
@@ -208,20 +208,20 @@ def test_run_static(
     # Prepare ProgEx input
     progex = {
         'inputs': inputs,
-        'inputIsStatic': inputIsStatic,
+        'inputSizeIsSlot': inputSizeIsSlot,
         'starts': starts,
         'steps': [
             {
                 'contractAddress': vendor_reg_contract.address,
                 'functionSig': functionSig1,
                 'inputIndexes': [0],
-                'outputIsStatic': [True],
+                'outputSizeIsSlot': [True],
             },
             {
                 'contractAddress': vendor_prices_contract.address,
                 'functionSig': functionSig2,
                 'inputIndexes': [0, 2, 1],
-                'outputIsStatic': [True],
+                'outputSizeIsSlot': [True],
             },
         ],
         'outputIndexes': [3],
@@ -229,18 +229,18 @@ def test_run_static(
     pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
     inserted = pipe_graph_proxy_contract.functions.getTestingDefault(1).call()
     assert progex['inputs'] == inserted[0]
-    assert progex['inputIsStatic'] == inserted[1]
+    assert progex['inputSizeIsSlot'] == inserted[1]
     assert progex['outputIndexes'] == inserted[2]
     assert progex['starts'] == inserted[3]
     assert len(progex['steps']) == len(inserted[4])
     assert progex['steps'][0]['contractAddress'] == inserted[4][0][0]
     assert progex['steps'][0]['functionSig'] == inserted[4][0][1]
     assert progex['steps'][0]['inputIndexes'] == inserted[4][0][2]
-    assert progex['steps'][0]['outputIsStatic'] == inserted[4][0][3]
+    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][3]
     assert progex['steps'][1]['contractAddress'] == inserted[4][1][0]
     assert progex['steps'][1]['functionSig'] == inserted[4][1][1]
     assert progex['steps'][1]['inputIndexes'] == inserted[4][1][2]
-    assert progex['steps'][1]['outputIsStatic'] == inserted[4][1][3]
+    assert progex['steps'][1]['outputSizeIsSlot'] == inserted[4][1][3]
 
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     assert Web3.toInt(answer) == quantity
@@ -249,14 +249,14 @@ def test_run_static(
     assert Web3.toInt(answer) == quantity
 
 
-def test_run_dynamic_simple(
+def test_run_multiple_slots_simple(
         pipe_graph_proxy_contract,
         pipegraph_proxy_test,
         get_accounts,
 ):
     uint = 5
 
-    (inputs, starts, inputIsStatic) = prepareGraphProxyInputs(
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
         ['uint256'],
         [uint],
     )
@@ -265,14 +265,14 @@ def test_run_dynamic_simple(
     # Prepare ProgEx input
     progex = {
         'inputs': inputs,
-        'inputIsStatic': inputIsStatic,
+        'inputSizeIsSlot': inputSizeIsSlot,
         'starts': starts,
         'steps': [
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_uint,
                 'inputIndexes': [0],
-                'outputIsStatic': [False],
+                'outputSizeIsSlot': [False],
             },
         ],
         'outputIndexes': [1],
@@ -280,14 +280,14 @@ def test_run_dynamic_simple(
     pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
     inserted = pipe_graph_proxy_contract.functions.getTestingDefault(1).call()
     assert progex['inputs'] == inserted[0]
-    assert progex['inputIsStatic'] == inserted[1]
+    assert progex['inputSizeIsSlot'] == inserted[1]
     assert progex['outputIndexes'] == inserted[2]
     assert progex['starts'] == inserted[3]
     assert len(progex['steps']) == len(inserted[4])
     assert progex['steps'][0]['contractAddress'] == inserted[4][0][0]
     assert progex['steps'][0]['functionSig'] == inserted[4][0][1]
     assert progex['steps'][0]['inputIndexes'] == inserted[4][0][2]
-    assert progex['steps'][0]['outputIsStatic'] == inserted[4][0][3]
+    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][3]
 
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     uarray = pipegraph_proxy_test.functions.t_uint(uint).call()
@@ -299,14 +299,14 @@ def test_run_dynamic_simple(
     assert list(decoded_answer[0]) == uarray
 
 
-def test_run_dynamic1(
+def test_run_multiple_slots_2(
         pipe_graph_proxy_contract,
         pipegraph_proxy_test,
         get_accounts,
 ):
     uint = 5
 
-    (inputs, starts, inputIsStatic) = prepareGraphProxyInputs(
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
         ['uint256'],
         [uint],
     )
@@ -316,20 +316,20 @@ def test_run_dynamic1(
     # Prepare ProgEx input
     progex = {
         'inputs': inputs,
-        'inputIsStatic': inputIsStatic,
+        'inputSizeIsSlot': inputSizeIsSlot,
         'starts': starts,
         'steps': [
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_uint,
                 'inputIndexes': [0],
-                'outputIsStatic': [False],
+                'outputSizeIsSlot': [False],
             },
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_address,
                 'inputIndexes': [],
-                'outputIsStatic': [True],
+                'outputSizeIsSlot': [True],
             },
         ],
         'outputIndexes': [1, 2],
@@ -338,18 +338,18 @@ def test_run_dynamic1(
     pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
     inserted = pipe_graph_proxy_contract.functions.getTestingDefault(1).call()
     assert progex['inputs'] == inserted[0]
-    assert progex['inputIsStatic'] == inserted[1]
+    assert progex['inputSizeIsSlot'] == inserted[1]
     assert progex['outputIndexes'] == inserted[2]
     assert progex['starts'] == inserted[3]
     assert len(progex['steps']) == len(inserted[4])
     assert progex['steps'][0]['contractAddress'] == inserted[4][0][0]
     assert progex['steps'][0]['functionSig'] == inserted[4][0][1]
     assert progex['steps'][0]['inputIndexes'] == inserted[4][0][2]
-    assert progex['steps'][0]['outputIsStatic'] == inserted[4][0][3]
+    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][3]
     assert progex['steps'][1]['contractAddress'] == inserted[4][1][0]
     assert progex['steps'][1]['functionSig'] == inserted[4][1][1]
     assert progex['steps'][1]['inputIndexes'] == inserted[4][1][2]
-    assert progex['steps'][1]['outputIsStatic'] == inserted[4][1][3]
+    assert progex['steps'][1]['outputSizeIsSlot'] == inserted[4][1][3]
 
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     uarray = pipegraph_proxy_test.functions.t_uint(uint).call()
@@ -364,14 +364,14 @@ def test_run_dynamic1(
     assert decoded_answer[1] == pipe_graph_proxy_contract.address.lower()
 
 
-def test_run_dynamic2(
+def test_run_multiple_slots_3(
         pipe_graph_proxy_contract,
         pipegraph_proxy_test,
         get_accounts,
 ):
     uint = 5
 
-    (inputs, starts, inputIsStatic) = prepareGraphProxyInputs(
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
         ['uint256'],
         [uint],
     )
@@ -383,32 +383,32 @@ def test_run_dynamic2(
 
     progex = {
         'inputs': inputs,
-        'inputIsStatic': inputIsStatic,
+        'inputSizeIsSlot': inputSizeIsSlot,
         'starts': starts,
         'steps': [
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_uint,
                 'inputIndexes': [0],
-                'outputIsStatic': [False],
+                'outputSizeIsSlot': [False],
             },
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_address,
                 'inputIndexes': [],
-                'outputIsStatic': [True],
+                'outputSizeIsSlot': [True],
             },
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_array,
                 'inputIndexes': [1, 0, 2],
-                'outputIsStatic': [False],
+                'outputSizeIsSlot': [False],
             },
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_struct,
                 'inputIndexes': [3],
-                'outputIsStatic': [True, False, True],
+                'outputSizeIsSlot': [True, False, True],
             },
         ],
     }

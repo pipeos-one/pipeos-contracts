@@ -2,7 +2,7 @@ pragma solidity ^0.5.4;
 pragma experimental ABIEncoderV2;
 
 
-contract PipeGraphProxy {
+contract PipeGraphInterpreter {
 
     uint256 public count = 1;
     mapping(uint256 => ProgEx) public testingDefaultsProgEx;
@@ -11,15 +11,15 @@ contract PipeGraphProxy {
         address contractAddress;
         bytes4 functionSig;
         uint8[] inputIndexes;
-        bool[] outputIsStatic;
+        bool[] outputSizeIsSlot;
     }
 
     struct ProgEx {
         // packed encoded inputs
         bytes inputs;
-        bool[] inputIsStatic;
+        bool[] inputSizeIsSlot;
         uint8[] outputIndexes;
-        // starts are of length inputIsStatic.length + 1
+        // starts are of length inputSizeIsSlot.length + 1
         uint16[] starts;
         Step[] steps;
     }
@@ -27,7 +27,7 @@ contract PipeGraphProxy {
     function addTestProgEx(ProgEx memory prog) public {
         ProgEx storage progex = testingDefaultsProgEx[count];
         progex.inputs = prog.inputs;
-        progex.inputIsStatic = prog.inputIsStatic;
+        progex.inputSizeIsSlot = prog.inputSizeIsSlot;
         progex.starts = prog.starts;
         progex.outputIndexes = prog.outputIndexes;
         for (uint8 i = 0; i < prog.steps.length; i++) {
@@ -45,22 +45,22 @@ contract PipeGraphProxy {
         uint256 length = startsLen;
 
         for (uint8 i = 0; i < script.steps.length; i ++) {
-            length += script.steps[i].outputIsStatic.length;
+            length += script.steps[i].outputSizeIsSlot.length;
         }
 
         uint16[] memory starts = new uint16[](length);
-        bool[] memory inputIsStatic = new bool[](length - 1);
+        bool[] memory inputSizeIsSlot = new bool[](length - 1);
 
         uint16 j;
         for (j = 0; j < script.starts.length - 1; j ++) {
             starts[j] = script.starts[j];
-            inputIsStatic[j] = script.inputIsStatic[j];
+            inputSizeIsSlot[j] = script.inputSizeIsSlot[j];
         }
         starts[j] = script.starts[j];
 
         for (uint8 i = 0; i < script.steps.length; i ++) {
             // Build inputs needed to make the transaction / call in this step
-            bytes memory inputs = buildAbiIO(script.inputs, script.steps[i].inputIndexes, inputIsStatic, starts);
+            bytes memory inputs = buildAbiIO(script.inputs, script.steps[i].inputIndexes, inputSizeIsSlot, starts);
 
             (bool success, bytes memory output) = script.steps[i].contractAddress.staticcall(
                 abi.encodePacked(script.steps[i].functionSig, inputs)
@@ -69,43 +69,43 @@ contract PipeGraphProxy {
 
             // Get output for step and insert it in the inputs
             uint16 index = 0;
-            for (uint8 out = 0; out < script.steps[i].outputIsStatic.length; out ++) {
-                if (script.steps[i].outputIsStatic[out] == true) {
-                    bytes32 addition = getStaticArgument(output, index);
+            for (uint8 out = 0; out < script.steps[i].outputSizeIsSlot.length; out ++) {
+                if (script.steps[i].outputSizeIsSlot[out] == true) {
+                    bytes32 addition = getSlot(output, index);
                     script.inputs = abi.encodePacked(script.inputs, addition);
 
                     starts[startsLen] = starts[startsLen - 1] + 32;
-                    inputIsStatic[startsLen - 1] = true;
+                    inputSizeIsSlot[startsLen - 1] = true;
                     index += 32;
                     startsLen += 1;
                 } else {
-                    uint16 endIndex = getNextDynamicIndex(output, script.steps[i].outputIsStatic, out);
+                    uint16 endIndex = getNextDynamicIndex(output, script.steps[i].outputSizeIsSlot, out);
 
                     bytes memory addition = getPartialBytes(output, index + 32, endIndex);
                     script.inputs = abi.encodePacked(script.inputs, addition);
 
                     starts[startsLen] = starts[startsLen - 1] + uint16(addition.length);
-                    inputIsStatic[startsLen - 1] = false;
+                    inputSizeIsSlot[startsLen - 1] = false;
                     index += uint16(addition.length);
                     startsLen += 1;
                 }
             }
         }
-        return buildAbiIO(script.inputs, script.outputIndexes, inputIsStatic, starts);
+        return buildAbiIO(script.inputs, script.outputIndexes, inputSizeIsSlot, starts);
     }
 
-    function getStaticArgument(bytes memory inputs, uint16 startIndex) pure public returns(bytes32 result) {
+    function getSlot(bytes memory inputs, uint16 startIndex) pure public returns(bytes32 result) {
         assembly {
             let freemem_pointer := mload(0x40)
             result := mload(add(inputs, add(startIndex, 32)))
         }
     }
 
-    function getNextDynamicIndex(bytes memory output, bool[] memory outputIsStatic, uint8 out)
+    function getNextDynamicIndex(bytes memory output, bool[] memory outputSizeIsSlot, uint8 out)
         pure public returns(uint16 index)
     {
-        for (uint16 i = out + 1; i < outputIsStatic.length; i ++) {
-            if (outputIsStatic[i] == false) {
+        for (uint16 i = out + 1; i < outputSizeIsSlot.length; i ++) {
+            if (outputSizeIsSlot[i] == false) {
                 uint16 offset;
                 uint16 index = (i + 1) * 32;
                 assembly {
@@ -168,13 +168,13 @@ contract PipeGraphProxy {
         }
     }
 
-    function buildAbiIO(bytes memory inputs, uint8[] memory inputIndexes, bool[] memory inputIsStatic, uint16[] memory starts) pure public returns(bytes memory result) {
+    function buildAbiIO(bytes memory inputs, uint8[] memory inputIndexes, bool[] memory inputSizeIsSlot, uint16[] memory starts) pure public returns(bytes memory result) {
         bytes memory heads;
         bytes memory tails;
 
         for (uint8 i = 0; i < inputIndexes.length; i++) {
-            if (inputIsStatic[inputIndexes[i]] == true) {
-                heads = abi.encodePacked(heads, getStaticArgument(inputs, starts[inputIndexes[i]]));
+            if (inputSizeIsSlot[inputIndexes[i]] == true) {
+                heads = abi.encodePacked(heads, getSlot(inputs, starts[inputIndexes[i]]));
             } else {
                 heads = abi.encodePacked(heads, uint256(inputIndexes.length * 32 + tails.length));
                 tails = abi.encodePacked(tails, getPartialBytes(
