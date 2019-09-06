@@ -68,25 +68,20 @@ contract PipeGraphInterpreter {
             require(success == true, 'Staticcall failed');
 
             // Get output for step and insert it in the inputs
-            uint16 index = 0;
             for (uint8 out = 0; out < script.steps[i].outputSizeIsSlot.length; out ++) {
                 if (script.steps[i].outputSizeIsSlot[out] == true) {
-                    bytes32 addition = getSlot(output, index);
+                    bytes32 addition = getSlot(output, out * 32);
                     script.inputs = abi.encodePacked(script.inputs, addition);
 
                     starts[startsLen] = starts[startsLen - 1] + 32;
                     inputSizeIsSlot[startsLen - 1] = true;
-                    index += 32;
                     startsLen += 1;
                 } else {
-                    uint16 endIndex = getNextDynamicIndex(output, script.steps[i].outputSizeIsSlot, out);
-
-                    bytes memory addition = getPartialBytes(output, index + 32, endIndex);
+                    bytes memory addition = getMultiSlotIO(output, script.steps[i].outputSizeIsSlot, out);
                     script.inputs = abi.encodePacked(script.inputs, addition);
 
                     starts[startsLen] = starts[startsLen - 1] + uint16(addition.length);
                     inputSizeIsSlot[startsLen - 1] = false;
-                    index += uint16(addition.length);
                     startsLen += 1;
                 }
             }
@@ -104,7 +99,7 @@ contract PipeGraphInterpreter {
     function getNextDynamicIndex(bytes memory output, bool[] memory outputSizeIsSlot, uint8 out)
         pure public returns(uint16 index)
     {
-        for (uint16 i = out + 1; i < outputSizeIsSlot.length; i ++) {
+        for (uint16 i = out; i < outputSizeIsSlot.length; i ++) {
             if (outputSizeIsSlot[i] == false) {
                 uint16 offset;
                 uint16 index = (i + 1) * 32;
@@ -112,10 +107,17 @@ contract PipeGraphInterpreter {
                     let freemem_pointer := mload(0x40)
                     offset := mload(add(output, index))
                 }
-                return index + offset;
+                return offset;
             }
         }
         return uint16(output.length);
+    }
+
+    function getMultiSlotIO(bytes memory output, bool[] memory outputSizeIsSlot, uint8 out) pure public returns(bytes memory addition) {
+        uint16 startIndex = getNextDynamicIndex(output, outputSizeIsSlot, out);
+        uint16 endIndex = getNextDynamicIndex(output, outputSizeIsSlot, out + 1);
+
+        return getPartialBytes(output, startIndex, endIndex);
     }
 
     // endIndex is not included

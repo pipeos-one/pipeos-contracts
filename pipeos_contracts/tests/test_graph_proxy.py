@@ -364,7 +364,60 @@ def test_run_multiple_slots_2(
     assert decoded_answer[1] == pipe_graph_proxy_contract.address.lower()
 
 
-def test_run_multiple_slots_3(
+def test_run_multiple_slots_multiple_outputs(
+        pipe_graph_proxy_contract,
+        pipegraph_proxy_test,
+        get_accounts,
+):
+    uint = 5
+    dynamic_array = [5, 6, 7]
+    address = get_accounts(1)[0]
+    t_struct = [uint, dynamic_array, address]
+
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
+        ['(uint256,uint256[],address)'],
+        [t_struct],
+    )
+
+    function_sig_struct = get_function_signature('t_struct', ['(uint256,uint256[],address)'])
+
+    progex = {
+        'inputs': inputs,
+        'inputSizeIsSlot': inputSizeIsSlot,
+        'starts': starts,
+        'steps': [
+            {
+                'contractAddress': pipegraph_proxy_test.address,
+                'functionSig': function_sig_struct,
+                'inputIndexes': [0],
+                'outputSizeIsSlot': [True, False, True],
+            },
+        ],
+    }
+
+    progex['outputIndexes'] = [1]
+    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    decoded_answer = decode_abi(['uint256'], answer)
+    assert decoded_answer[0] == uint
+
+    progex['outputIndexes'] = [2]
+    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    decoded_answer = decode_abi(['uint256[]'], answer)
+    assert list(decoded_answer[0]) == dynamic_array
+
+    progex['outputIndexes'] = [3]
+    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    decoded_answer = decode_abi(['address'], answer)
+    assert decoded_answer[0] == address.lower()
+
+    progex['outputIndexes'] = [1, 2]
+    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    decoded_answer = decode_abi(['uint256', 'uint256[]'], answer)
+    assert decoded_answer[0] == uint
+    assert list(decoded_answer[1]) == dynamic_array
+
+
+def test_run_multiple_slots_multiple_outputs_complex(
         pipe_graph_proxy_contract,
         pipegraph_proxy_test,
         get_accounts,
@@ -433,14 +486,14 @@ def test_run_multiple_slots_3(
     decoded_answer = decode_abi(['uint256'], answer)
     assert decoded_answer[0] == uint
 
-    # progex['outputIndexes'] = [5]
-    # answer = pipe_graph_proxy_contract.functions.run(progex).call()
-    # decoded_answer = decode_abi(['uint256[]'], answer)
-    # assert list(decoded_answer[0]) == uarray
-    #
-    # progex['outputIndexes'] = [4, 5, 6]
-    # answer = pipe_graph_proxy_contract.functions.run(progex).call()
-    # decoded_answer = decode_abi(['uint256', 'uint256[]', 'address'], answer)
-    # assert decoded_answer[0] == uint
-    # assert list(decoded_answer[1]) == uarray
-    # assert decoded_answer[2] == pipe_graph_proxy_contract.address.lower()
+    progex['outputIndexes'] = [5]
+    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    decoded_answer = decode_abi(['uint256[]'], answer)
+    assert list(decoded_answer[0]) == uarray
+
+    progex['outputIndexes'] = [4, 5, 6]
+    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    decoded_answer = decode_abi(['uint256', 'uint256[]', 'address'], answer)
+    assert decoded_answer[0] == uint
+    assert list(decoded_answer[1]) == uarray
+    assert decoded_answer[2] == pipe_graph_proxy_contract.address.lower()
