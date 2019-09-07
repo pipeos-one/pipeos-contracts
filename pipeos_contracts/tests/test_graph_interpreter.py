@@ -632,7 +632,7 @@ def test_run_transaction_mix(
     }
 
     prod_quantity_pre = market_contract.functions.getQuantity(vendor, product_id).call()
-    txn_hash = pipe_graph_interpreter.functions.run(progex).transact({'value': wei_value})
+    pipe_graph_interpreter.functions.run(progex).transact({'value': wei_value})
     prod_quantity_post = market_contract.functions.getQuantity(vendor, product_id).call()
 
     assert prod_quantity_pre - quantity == prod_quantity_post
