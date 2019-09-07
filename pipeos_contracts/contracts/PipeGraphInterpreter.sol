@@ -10,6 +10,7 @@ contract PipeGraphInterpreter {
     struct Step {
         address contractAddress;
         bytes4 functionSig;
+        uint8 valueIndex;  // if exists, needs to be > 0
         uint8[] inputIndexes;
         bool[] outputSizeIsSlot;
     }
@@ -40,7 +41,7 @@ contract PipeGraphInterpreter {
         return run(testingDefaultsProgEx[index]);
     }
 
-    function run(ProgEx memory script) public returns(bytes memory result) {
+    function run(ProgEx memory script) payable public returns(bytes memory result) {
         uint256 startsLen = script.starts.length;
         uint256 length = startsLen;
 
@@ -62,10 +63,17 @@ contract PipeGraphInterpreter {
             // Build inputs needed to make the transaction / call in this step
             bytes memory inputs = buildAbiIO(script.inputs, script.steps[i].inputIndexes, inputSizeIsSlot, starts);
 
-            (bool success, bytes memory output) = script.steps[i].contractAddress.staticcall(
+            // Get the value from the script.inputs; inputs does not contain value
+            uint256 value;
+            if (script.steps[i].valueIndex > 0) {
+                value = uint256(getSlot(script.inputs, starts[script.steps[i].valueIndex]));
+            }
+
+            (bool success, bytes memory output) = script.steps[i].contractAddress.call.value(value)(
                 abi.encodePacked(script.steps[i].functionSig, inputs)
             );
-            require(success == true, 'Staticcall failed');
+
+            require(success == true, 'Call failed');
 
             // Get output for step and insert it in the inputs
             for (uint8 out = 0; out < script.steps[i].outputSizeIsSlot.length; out ++) {

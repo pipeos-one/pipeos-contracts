@@ -6,6 +6,9 @@ from pipeos_contracts.tests.utils.encoding import (
 )
 
 
+# !graph arrays significant values start from index 1
+# due to valueIndex, that can be 0
+
 def test_getSlot(pipe_graph_proxy_contract):
     product_id = 1
     wei_value = 100
@@ -41,43 +44,43 @@ def test_getPartialBytes(pipe_graph_proxy_contract):
 
     get_static_array = pipe_graph_proxy_contract.functions.getPartialBytes(
         inputs,
-        starts[0],
         starts[1],
+        starts[2],
     ).call()
     assert get_static_array == encode_single('uint256[3]', static_array)
 
     get_uint = pipe_graph_proxy_contract.functions.getPartialBytes(
         inputs,
-        starts[1],
         starts[2],
+        starts[3],
     ).call()
     assert get_uint == encode_single('uint256', uint)
 
     get_dynamic_array = pipe_graph_proxy_contract.functions.getPartialBytes(
         inputs,
-        starts[2],
         starts[3],
+        starts[4],
     ).call()
     assert get_dynamic_array == encode_single('uint256[]', dynamic_array)
 
     get_struct = pipe_graph_proxy_contract.functions.getPartialBytes(
         inputs,
-        starts[3],
         starts[4],
+        starts[5],
     ).call()
     assert get_struct == encode_single('(bool,bytes,uint16)', list(struct.values()))
 
     get_vendor = pipe_graph_proxy_contract.functions.getPartialBytes(
         inputs,
-        starts[4],
         starts[5],
+        starts[6],
     ).call()
     assert get_vendor == encode_single('address', vendor)
 
     get_string = pipe_graph_proxy_contract.functions.getPartialBytes(
         inputs,
-        starts[5],
         starts[6],
+        starts[7],
     ).call()
     assert get_string == encode_single('string', string)
 
@@ -91,7 +94,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
         [product_id, wei_value, vendor],
     )
 
-    inputIndexes = [0]
+    inputIndexes = [1]
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
@@ -100,7 +103,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     ).call()
     assert built_input == encode_single('uint256', product_id)
 
-    inputIndexes = [1]
+    inputIndexes = [2]
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
@@ -109,7 +112,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     ).call()
     assert built_input == encode_single('uint256', wei_value)
 
-    inputIndexes = [2]
+    inputIndexes = [3]
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
@@ -118,7 +121,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     ).call()
     assert built_input == encode_single('address', vendor)
 
-    inputIndexes = [0, 2]
+    inputIndexes = [1, 3]
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
@@ -130,7 +133,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
         + encode_single('address', vendor)
     )
 
-    inputIndexes = [0, 2, 1]
+    inputIndexes = [1, 3, 2]
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
@@ -154,7 +157,7 @@ def test_buildAbiIO_multiple_slots(pipe_graph_proxy_contract, pipegraph_proxy_te
         ['uint256[]', 'uint256', 'address'],
         [dynamic_array, uint, address],
     )
-    inputIndexes = [0, 1, 2]
+    inputIndexes = [1, 2, 3]
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
@@ -172,7 +175,7 @@ def test_buildAbiIO_multiple_slots(pipe_graph_proxy_contract, pipegraph_proxy_te
         ['(uint256,uint256[],address)'],
         [t_struct],
     )
-    inputIndexes = [0]
+    inputIndexes = [1]
     built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
         inputs,
         inputIndexes,
@@ -214,17 +217,19 @@ def test_run_one_slot(
             {
                 'contractAddress': vendor_reg_contract.address,
                 'functionSig': functionSig1,
-                'inputIndexes': [0],
+                'inputIndexes': [1],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [True],
             },
             {
                 'contractAddress': vendor_prices_contract.address,
                 'functionSig': functionSig2,
-                'inputIndexes': [0, 2, 1],
+                'inputIndexes': [1, 3, 2],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [True],
             },
         ],
-        'outputIndexes': [3],
+        'outputIndexes': [4],
     }
     pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
     inserted = pipe_graph_proxy_contract.functions.getTestingDefault(1).call()
@@ -235,12 +240,14 @@ def test_run_one_slot(
     assert len(progex['steps']) == len(inserted[4])
     assert progex['steps'][0]['contractAddress'] == inserted[4][0][0]
     assert progex['steps'][0]['functionSig'] == inserted[4][0][1]
-    assert progex['steps'][0]['inputIndexes'] == inserted[4][0][2]
-    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][3]
+    assert progex['steps'][0]['valueIndex'] == inserted[4][0][2]
+    assert progex['steps'][0]['inputIndexes'] == inserted[4][0][3]
+    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][4]
     assert progex['steps'][1]['contractAddress'] == inserted[4][1][0]
     assert progex['steps'][1]['functionSig'] == inserted[4][1][1]
-    assert progex['steps'][1]['inputIndexes'] == inserted[4][1][2]
-    assert progex['steps'][1]['outputSizeIsSlot'] == inserted[4][1][3]
+    assert progex['steps'][1]['valueIndex'] == inserted[4][1][2]
+    assert progex['steps'][1]['inputIndexes'] == inserted[4][1][3]
+    assert progex['steps'][1]['outputSizeIsSlot'] == inserted[4][1][4]
 
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     assert Web3.toInt(answer) == quantity
@@ -271,11 +278,12 @@ def test_run_multiple_slots_simple(
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_uint,
-                'inputIndexes': [0],
+                'inputIndexes': [1],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [False],
             },
         ],
-        'outputIndexes': [1],
+        'outputIndexes': [2],
     }
     pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
     inserted = pipe_graph_proxy_contract.functions.getTestingDefault(1).call()
@@ -286,8 +294,9 @@ def test_run_multiple_slots_simple(
     assert len(progex['steps']) == len(inserted[4])
     assert progex['steps'][0]['contractAddress'] == inserted[4][0][0]
     assert progex['steps'][0]['functionSig'] == inserted[4][0][1]
-    assert progex['steps'][0]['inputIndexes'] == inserted[4][0][2]
-    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][3]
+    assert progex['steps'][0]['valueIndex'] == inserted[4][0][2]
+    assert progex['steps'][0]['inputIndexes'] == inserted[4][0][3]
+    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][4]
 
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     uarray = pipegraph_proxy_test.functions.t_uint(uint).call()
@@ -322,17 +331,19 @@ def test_run_multiple_slots_2(
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_uint,
-                'inputIndexes': [0],
+                'inputIndexes': [1],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [False],
             },
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_address,
                 'inputIndexes': [],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [True],
             },
         ],
-        'outputIndexes': [1, 2],
+        'outputIndexes': [2, 3],
     }
 
     pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
@@ -344,12 +355,14 @@ def test_run_multiple_slots_2(
     assert len(progex['steps']) == len(inserted[4])
     assert progex['steps'][0]['contractAddress'] == inserted[4][0][0]
     assert progex['steps'][0]['functionSig'] == inserted[4][0][1]
-    assert progex['steps'][0]['inputIndexes'] == inserted[4][0][2]
-    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][3]
+    assert progex['steps'][0]['valueIndex'] == inserted[4][0][2]
+    assert progex['steps'][0]['inputIndexes'] == inserted[4][0][3]
+    assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][4]
     assert progex['steps'][1]['contractAddress'] == inserted[4][1][0]
     assert progex['steps'][1]['functionSig'] == inserted[4][1][1]
-    assert progex['steps'][1]['inputIndexes'] == inserted[4][1][2]
-    assert progex['steps'][1]['outputSizeIsSlot'] == inserted[4][1][3]
+    assert progex['steps'][1]['valueIndex'] == inserted[4][1][2]
+    assert progex['steps'][1]['inputIndexes'] == inserted[4][1][3]
+    assert progex['steps'][1]['outputSizeIsSlot'] == inserted[4][1][4]
 
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     uarray = pipegraph_proxy_test.functions.t_uint(uint).call()
@@ -389,28 +402,29 @@ def test_run_multiple_slots_multiple_outputs(
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_struct,
-                'inputIndexes': [0],
+                'inputIndexes': [1],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [True, False, True],
             },
         ],
     }
 
-    progex['outputIndexes'] = [1]
+    progex['outputIndexes'] = [2]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256'], answer)
     assert decoded_answer[0] == uint
 
-    progex['outputIndexes'] = [2]
+    progex['outputIndexes'] = [3]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256[]'], answer)
     assert list(decoded_answer[0]) == dynamic_array
 
-    progex['outputIndexes'] = [3]
+    progex['outputIndexes'] = [4]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['address'], answer)
     assert decoded_answer[0] == address.lower()
 
-    progex['outputIndexes'] = [1, 2]
+    progex['outputIndexes'] = [2, 3]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256', 'uint256[]'], answer)
     assert decoded_answer[0] == uint
@@ -442,25 +456,29 @@ def test_run_multiple_slots_multiple_outputs_complex(
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_uint,
-                'inputIndexes': [0],
+                'inputIndexes': [1],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [False],
             },
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_address,
                 'inputIndexes': [],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [True],
             },
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_array,
-                'inputIndexes': [1, 0, 2],
+                'inputIndexes': [2, 1, 3],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [False],
             },
             {
                 'contractAddress': pipegraph_proxy_test.address,
                 'functionSig': function_sig_struct,
-                'inputIndexes': [3],
+                'inputIndexes': [4],
+                'valueIndex': 0,
                 'outputSizeIsSlot': [True, False, True],
             },
         ],
@@ -468,12 +486,12 @@ def test_run_multiple_slots_multiple_outputs_complex(
 
     uarray = pipegraph_proxy_test.functions.t_uint(uint).call()
 
-    progex['outputIndexes'] = [0]
+    progex['outputIndexes'] = [1]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256'], answer)
     assert decoded_answer[0] == uint
 
-    progex['outputIndexes'] = [0, 3]
+    progex['outputIndexes'] = [1, 4]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256', '(uint256,uint256[],address)'], answer)
     assert decoded_answer[0] == uint
@@ -481,19 +499,148 @@ def test_run_multiple_slots_multiple_outputs_complex(
     assert list(decoded_answer[1][1]) == uarray
     assert decoded_answer[1][2] == pipe_graph_proxy_contract.address.lower()
 
-    progex['outputIndexes'] = [4]
+    progex['outputIndexes'] = [5]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256'], answer)
     assert decoded_answer[0] == uint
 
-    progex['outputIndexes'] = [5]
+    progex['outputIndexes'] = [6]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256[]'], answer)
     assert list(decoded_answer[0]) == uarray
 
-    progex['outputIndexes'] = [4, 5, 6]
+    progex['outputIndexes'] = [5, 6, 7]
     answer = pipe_graph_proxy_contract.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256', 'uint256[]', 'address'], answer)
     assert decoded_answer[0] == uint
     assert list(decoded_answer[1]) == uarray
     assert decoded_answer[2] == pipe_graph_proxy_contract.address.lower()
+
+
+def test_run_payable(
+        web3,
+        get_accounts,
+        pipe_graph_proxy_contract,
+        vendor_reg_contract,
+        vendor_prices_contract,
+        market_contract,
+):
+    product_id = 1
+    wei_value = 100
+    buyer = get_accounts(1)[0]
+    vendor = vendor_reg_contract.functions.getVendor(product_id).call()
+    quantity = vendor_prices_contract.functions.calculateQuantity(
+        product_id,
+        vendor,
+        wei_value,
+    ).call()
+
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
+        ['address', 'address', 'uint256', 'uint256', 'uint256'],
+        [vendor, buyer, product_id, quantity, wei_value],
+    )
+    sigBuy = get_function_signature('buy', ['address', 'address', 'uint256', 'uint256'])
+
+    # Prepare ProgEx input
+    progex = {
+        'inputs': inputs,
+        'inputSizeIsSlot': inputSizeIsSlot,
+        'starts': starts,
+        'steps': [
+            {
+                'contractAddress': market_contract.address,
+                'functionSig': sigBuy,
+                'inputIndexes': [1, 2, 3, 4],  # vendor, buyer, product_id, quantity, wei_value
+                'valueIndex': 5,
+                'outputSizeIsSlot': [],
+            },
+        ],
+        'outputIndexes': [],
+    }
+
+    prod_quantity_pre = market_contract.functions.getQuantity(vendor, product_id).call()
+    txn_hash = pipe_graph_proxy_contract.functions.run(progex).transact({'value': wei_value})
+    prod_quantity_post = market_contract.functions.getQuantity(vendor, product_id).call()
+
+    assert prod_quantity_pre - quantity == prod_quantity_post
+
+    txn_hash2 = market_contract.functions.buy(vendor, buyer, product_id, quantity).transact({
+        'value': wei_value,
+    })
+    print('test_run_payable run', web3.eth.getTransactionReceipt(txn_hash)['cumulativeGasUsed'])
+    print('test_run_payable buy', web3.eth.getTransactionReceipt(txn_hash2)['cumulativeGasUsed'])
+
+
+def test_run_transaction_mix(
+        web3,
+        get_accounts,
+        pipe_graph_proxy_contract,
+        vendor_reg_contract,
+        vendor_prices_contract,
+        market_contract,
+):
+    product_id = 1
+    wei_value = 100
+    buyer = get_accounts(1)[0]
+    vendor = vendor_reg_contract.functions.getVendor(product_id).call()
+    quantity = vendor_prices_contract.functions.calculateQuantity(
+        product_id,
+        vendor,
+        wei_value,
+    ).call()
+
+    (inputs, starts, inputSizeIsSlot) = prepareGraphProxyInputs(
+        ['uint256', 'address', 'uint256'],
+        [product_id, buyer, wei_value],
+    )
+    sigGetVendor = get_function_signature('getVendor', ['uint256'])
+    sigCalculateQuantity = get_function_signature(
+        'calculateQuantity',
+        ['uint256', 'address', 'uint256'],
+    )
+    sigBuy = get_function_signature('buy', ['address', 'address', 'uint256', 'uint256'])
+
+    # Prepare ProgEx input
+    progex = {
+        'inputs': inputs,
+        'inputSizeIsSlot': inputSizeIsSlot,
+        'starts': starts,
+        'steps': [
+            {
+                'contractAddress': vendor_reg_contract.address,
+                'functionSig': sigGetVendor,
+                'inputIndexes': [1],  # product_id
+                'valueIndex': 0,
+                'outputSizeIsSlot': [True],
+            },
+            {
+                'contractAddress': vendor_prices_contract.address,
+                'functionSig': sigCalculateQuantity,
+                'inputIndexes': [1, 4, 3],  # product_id, vendor, wei_value
+                'valueIndex': 0,
+                'outputSizeIsSlot': [True],
+            },
+            {
+                'contractAddress': market_contract.address,
+                'functionSig': sigBuy,
+                'inputIndexes': [4, 2, 1, 5],  # vendor, buyer, product_id, quantity
+                'valueIndex': 3,
+                'outputSizeIsSlot': [],
+            },
+        ],
+        'outputIndexes': [],
+    }
+
+    prod_quantity_pre = market_contract.functions.getQuantity(vendor, product_id).call()
+    txn_hash = pipe_graph_proxy_contract.functions.run(progex).transact({'value': wei_value})
+    prod_quantity_post = market_contract.functions.getQuantity(vendor, product_id).call()
+
+    assert prod_quantity_pre - quantity == prod_quantity_post
+
+    txn_hash2 = market_contract.functions.buy(vendor, buyer, product_id, quantity).transact({
+        'value': wei_value,
+    })
+    receipt1 = web3.eth.getTransactionReceipt(txn_hash)['cumulativeGasUsed']
+    receipt2 = web3.eth.getTransactionReceipt(txn_hash2)['cumulativeGasUsed']
+    print('test_run_transaction_mix run', receipt1)
+    print('test_run_transaction_mix buy', receipt2)

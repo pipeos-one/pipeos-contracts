@@ -30,8 +30,10 @@ def prepareGraphProxyInputs(types=(), values=()):
 
     abi_encoded = [encode_single(types[i], values[i]) for (i, _) in enumerate(types)]
 
+    # We need to increase the index of each element with 1; position 0 is not used
+    # So valueIndex can have a value of 0 if it is not set
     starts = [0] + [len(x) for (_, x) in enumerate(abi_encoded)]
-    starts = list(accumulate(starts))
-    inputIsStatic = [len(x) == 32 for (_, x) in enumerate(abi_encoded)]
+    starts = [0] + list(accumulate(starts))
+    inputSizeIsSlot = [False] + [len(x) == 32 for (_, x) in enumerate(abi_encoded)]
 
-    return (b"".join(abi_encoded), starts, inputIsStatic)
+    return (b"".join(abi_encoded), starts, inputSizeIsSlot)
