@@ -12,7 +12,7 @@ def pipe_proxy_contract(contracts_manager, deploy_contract):
 
 
 @pytest.fixture
-def pipe_graph_proxy_contract(contracts_manager, deploy_contract):
+def pipe_graph_interpreter(contracts_manager, deploy_contract):
     json_contract = contracts_manager.get_contract('PipeGraphInterpreter')
     (contract, txn_hash) = deploy_contract(
         json_contract['abi'],

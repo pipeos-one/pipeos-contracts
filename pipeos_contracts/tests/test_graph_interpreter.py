@@ -9,20 +9,20 @@ from pipeos_contracts.tests.utils.encoding import (
 # !graph arrays significant values start from index 1
 # due to valueIndex, that can be 0
 
-def test_getSlot(pipe_graph_proxy_contract):
+def test_getSlot(pipe_graph_interpreter):
     product_id = 1
     wei_value = 100
     (inputs, _, _) = prepareGraphProxyInputs(
         ['uint256', 'uint256'],
         [product_id, wei_value],
     )
-    prodid = pipe_graph_proxy_contract.functions.getSlot(inputs, 0).call()
-    wei = pipe_graph_proxy_contract.functions.getSlot(inputs, 32).call()
+    prodid = pipe_graph_interpreter.functions.getSlot(inputs, 0).call()
+    wei = pipe_graph_interpreter.functions.getSlot(inputs, 32).call()
     assert prodid == encode_single('uint256', product_id)
     assert wei == encode_single('uint256', wei_value)
 
 
-def test_getPartialBytes(pipe_graph_proxy_contract):
+def test_getPartialBytes(pipe_graph_interpreter):
     static_array = [1, 2, 3]
     uint = 100
     dynamic_array = [5, 6, 7]
@@ -42,42 +42,42 @@ def test_getPartialBytes(pipe_graph_proxy_contract):
         [static_array, uint, dynamic_array, list(struct.values()), vendor, string],
     )
 
-    get_static_array = pipe_graph_proxy_contract.functions.getPartialBytes(
+    get_static_array = pipe_graph_interpreter.functions.getPartialBytes(
         inputs,
         starts[1],
         starts[2],
     ).call()
     assert get_static_array == encode_single('uint256[3]', static_array)
 
-    get_uint = pipe_graph_proxy_contract.functions.getPartialBytes(
+    get_uint = pipe_graph_interpreter.functions.getPartialBytes(
         inputs,
         starts[2],
         starts[3],
     ).call()
     assert get_uint == encode_single('uint256', uint)
 
-    get_dynamic_array = pipe_graph_proxy_contract.functions.getPartialBytes(
+    get_dynamic_array = pipe_graph_interpreter.functions.getPartialBytes(
         inputs,
         starts[3],
         starts[4],
     ).call()
     assert get_dynamic_array == encode_single('uint256[]', dynamic_array)
 
-    get_struct = pipe_graph_proxy_contract.functions.getPartialBytes(
+    get_struct = pipe_graph_interpreter.functions.getPartialBytes(
         inputs,
         starts[4],
         starts[5],
     ).call()
     assert get_struct == encode_single('(bool,bytes,uint16)', list(struct.values()))
 
-    get_vendor = pipe_graph_proxy_contract.functions.getPartialBytes(
+    get_vendor = pipe_graph_interpreter.functions.getPartialBytes(
         inputs,
         starts[5],
         starts[6],
     ).call()
     assert get_vendor == encode_single('address', vendor)
 
-    get_string = pipe_graph_proxy_contract.functions.getPartialBytes(
+    get_string = pipe_graph_interpreter.functions.getPartialBytes(
         inputs,
         starts[6],
         starts[7],
@@ -85,7 +85,7 @@ def test_getPartialBytes(pipe_graph_proxy_contract):
     assert get_string == encode_single('string', string)
 
 
-def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
+def test_buildAbiIO_one_slot(pipe_graph_interpreter):
     product_id = 1
     wei_value = 100
     vendor = '0x1111111111111111111111111111111111111111'
@@ -95,7 +95,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     )
 
     inputIndexes = [1]
-    built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
+    built_input = pipe_graph_interpreter.functions.buildAbiIO(
         inputs,
         inputIndexes,
         inputSizeIsSlot,
@@ -104,7 +104,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     assert built_input == encode_single('uint256', product_id)
 
     inputIndexes = [2]
-    built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
+    built_input = pipe_graph_interpreter.functions.buildAbiIO(
         inputs,
         inputIndexes,
         inputSizeIsSlot,
@@ -113,7 +113,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     assert built_input == encode_single('uint256', wei_value)
 
     inputIndexes = [3]
-    built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
+    built_input = pipe_graph_interpreter.functions.buildAbiIO(
         inputs,
         inputIndexes,
         inputSizeIsSlot,
@@ -122,7 +122,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     assert built_input == encode_single('address', vendor)
 
     inputIndexes = [1, 3]
-    built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
+    built_input = pipe_graph_interpreter.functions.buildAbiIO(
         inputs,
         inputIndexes,
         inputSizeIsSlot,
@@ -134,7 +134,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     )
 
     inputIndexes = [1, 3, 2]
-    built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
+    built_input = pipe_graph_interpreter.functions.buildAbiIO(
         inputs,
         inputIndexes,
         inputSizeIsSlot,
@@ -147,7 +147,7 @@ def test_buildAbiIO_one_slot(pipe_graph_proxy_contract):
     )
 
 
-def test_buildAbiIO_multiple_slots(pipe_graph_proxy_contract, pipegraph_proxy_test, get_accounts):
+def test_buildAbiIO_multiple_slots(pipe_graph_interpreter, pipegraph_proxy_test, get_accounts):
     uint = 5
     dynamic_array = [5, 6, 7]
     address = get_accounts(1)[0]
@@ -158,7 +158,7 @@ def test_buildAbiIO_multiple_slots(pipe_graph_proxy_contract, pipegraph_proxy_te
         [dynamic_array, uint, address],
     )
     inputIndexes = [1, 2, 3]
-    built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
+    built_input = pipe_graph_interpreter.functions.buildAbiIO(
         inputs,
         inputIndexes,
         inputSizeIsSlot,
@@ -176,7 +176,7 @@ def test_buildAbiIO_multiple_slots(pipe_graph_proxy_contract, pipegraph_proxy_te
         [t_struct],
     )
     inputIndexes = [1]
-    built_input = pipe_graph_proxy_contract.functions.buildAbiIO(
+    built_input = pipe_graph_interpreter.functions.buildAbiIO(
         inputs,
         inputIndexes,
         inputSizeIsSlot,
@@ -187,7 +187,7 @@ def test_buildAbiIO_multiple_slots(pipe_graph_proxy_contract, pipegraph_proxy_te
 
 
 def test_run_one_slot(
-        pipe_graph_proxy_contract,
+        pipe_graph_interpreter,
         vendor_reg_contract,
         vendor_prices_contract,
         market_contract,
@@ -231,8 +231,8 @@ def test_run_one_slot(
         ],
         'outputIndexes': [4],
     }
-    pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
-    inserted = pipe_graph_proxy_contract.functions.getTestingDefault(1).call()
+    pipe_graph_interpreter.functions.addTestProgEx(progex).transact()
+    inserted = pipe_graph_interpreter.functions.getTestingDefault(1).call()
     assert progex['inputs'] == inserted[0]
     assert progex['inputSizeIsSlot'] == inserted[1]
     assert progex['outputIndexes'] == inserted[2]
@@ -249,15 +249,15 @@ def test_run_one_slot(
     assert progex['steps'][1]['inputIndexes'] == inserted[4][1][3]
     assert progex['steps'][1]['outputSizeIsSlot'] == inserted[4][1][4]
 
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     assert Web3.toInt(answer) == quantity
 
-    answer = pipe_graph_proxy_contract.functions.runTestingDefault(1).call()
+    answer = pipe_graph_interpreter.functions.runTestingDefault(1).call()
     assert Web3.toInt(answer) == quantity
 
 
 def test_run_multiple_slots_simple(
-        pipe_graph_proxy_contract,
+        pipe_graph_interpreter,
         pipegraph_proxy_test,
         get_accounts,
 ):
@@ -285,8 +285,8 @@ def test_run_multiple_slots_simple(
         ],
         'outputIndexes': [2],
     }
-    pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
-    inserted = pipe_graph_proxy_contract.functions.getTestingDefault(1).call()
+    pipe_graph_interpreter.functions.addTestProgEx(progex).transact()
+    inserted = pipe_graph_interpreter.functions.getTestingDefault(1).call()
     assert progex['inputs'] == inserted[0]
     assert progex['inputSizeIsSlot'] == inserted[1]
     assert progex['outputIndexes'] == inserted[2]
@@ -298,18 +298,18 @@ def test_run_multiple_slots_simple(
     assert progex['steps'][0]['inputIndexes'] == inserted[4][0][3]
     assert progex['steps'][0]['outputSizeIsSlot'] == inserted[4][0][4]
 
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     uarray = pipegraph_proxy_test.functions.t_uint(uint).call()
     decoded_answer = decode_abi(['uint256[]'], answer)
     assert list(decoded_answer[0]) == uarray
 
-    answer = pipe_graph_proxy_contract.functions.runTestingDefault(1).call()
+    answer = pipe_graph_interpreter.functions.runTestingDefault(1).call()
     decoded_answer = decode_abi(['uint256[]'], answer)
     assert list(decoded_answer[0]) == uarray
 
 
 def test_run_multiple_slots_2(
-        pipe_graph_proxy_contract,
+        pipe_graph_interpreter,
         pipegraph_proxy_test,
         get_accounts,
 ):
@@ -346,8 +346,8 @@ def test_run_multiple_slots_2(
         'outputIndexes': [2, 3],
     }
 
-    pipe_graph_proxy_contract.functions.addTestProgEx(progex).transact()
-    inserted = pipe_graph_proxy_contract.functions.getTestingDefault(1).call()
+    pipe_graph_interpreter.functions.addTestProgEx(progex).transact()
+    inserted = pipe_graph_interpreter.functions.getTestingDefault(1).call()
     assert progex['inputs'] == inserted[0]
     assert progex['inputSizeIsSlot'] == inserted[1]
     assert progex['outputIndexes'] == inserted[2]
@@ -364,21 +364,21 @@ def test_run_multiple_slots_2(
     assert progex['steps'][1]['inputIndexes'] == inserted[4][1][3]
     assert progex['steps'][1]['outputSizeIsSlot'] == inserted[4][1][4]
 
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     uarray = pipegraph_proxy_test.functions.t_uint(uint).call()
     encoded_answer = encode_abi(
         ['uint256[]', 'address'],
-        [uarray, pipe_graph_proxy_contract.address],
+        [uarray, pipe_graph_interpreter.address],
     )
     assert answer == encoded_answer
 
     decoded_answer = decode_abi(['uint256[]', 'address'], answer)
     assert list(decoded_answer[0]) == uarray
-    assert decoded_answer[1] == pipe_graph_proxy_contract.address.lower()
+    assert decoded_answer[1] == pipe_graph_interpreter.address.lower()
 
 
 def test_run_multiple_slots_multiple_outputs(
-        pipe_graph_proxy_contract,
+        pipe_graph_interpreter,
         pipegraph_proxy_test,
         get_accounts,
 ):
@@ -410,29 +410,29 @@ def test_run_multiple_slots_multiple_outputs(
     }
 
     progex['outputIndexes'] = [2]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256'], answer)
     assert decoded_answer[0] == uint
 
     progex['outputIndexes'] = [3]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256[]'], answer)
     assert list(decoded_answer[0]) == dynamic_array
 
     progex['outputIndexes'] = [4]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['address'], answer)
     assert decoded_answer[0] == address.lower()
 
     progex['outputIndexes'] = [2, 3]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256', 'uint256[]'], answer)
     assert decoded_answer[0] == uint
     assert list(decoded_answer[1]) == dynamic_array
 
 
 def test_run_multiple_slots_multiple_outputs_complex(
-        pipe_graph_proxy_contract,
+        pipe_graph_interpreter,
         pipegraph_proxy_test,
         get_accounts,
 ):
@@ -487,40 +487,40 @@ def test_run_multiple_slots_multiple_outputs_complex(
     uarray = pipegraph_proxy_test.functions.t_uint(uint).call()
 
     progex['outputIndexes'] = [1]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256'], answer)
     assert decoded_answer[0] == uint
 
     progex['outputIndexes'] = [1, 4]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256', '(uint256,uint256[],address)'], answer)
     assert decoded_answer[0] == uint
     assert decoded_answer[1][0] == uint
     assert list(decoded_answer[1][1]) == uarray
-    assert decoded_answer[1][2] == pipe_graph_proxy_contract.address.lower()
+    assert decoded_answer[1][2] == pipe_graph_interpreter.address.lower()
 
     progex['outputIndexes'] = [5]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256'], answer)
     assert decoded_answer[0] == uint
 
     progex['outputIndexes'] = [6]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256[]'], answer)
     assert list(decoded_answer[0]) == uarray
 
     progex['outputIndexes'] = [5, 6, 7]
-    answer = pipe_graph_proxy_contract.functions.run(progex).call()
+    answer = pipe_graph_interpreter.functions.run(progex).call()
     decoded_answer = decode_abi(['uint256', 'uint256[]', 'address'], answer)
     assert decoded_answer[0] == uint
     assert list(decoded_answer[1]) == uarray
-    assert decoded_answer[2] == pipe_graph_proxy_contract.address.lower()
+    assert decoded_answer[2] == pipe_graph_interpreter.address.lower()
 
 
 def test_run_payable(
         web3,
         get_accounts,
-        pipe_graph_proxy_contract,
+        pipe_graph_interpreter,
         vendor_reg_contract,
         vendor_prices_contract,
         market_contract,
@@ -559,7 +559,7 @@ def test_run_payable(
     }
 
     prod_quantity_pre = market_contract.functions.getQuantity(vendor, product_id).call()
-    txn_hash = pipe_graph_proxy_contract.functions.run(progex).transact({'value': wei_value})
+    txn_hash = pipe_graph_interpreter.functions.run(progex).transact({'value': wei_value})
     prod_quantity_post = market_contract.functions.getQuantity(vendor, product_id).call()
 
     assert prod_quantity_pre - quantity == prod_quantity_post
@@ -574,7 +574,7 @@ def test_run_payable(
 def test_run_transaction_mix(
         web3,
         get_accounts,
-        pipe_graph_proxy_contract,
+        pipe_graph_interpreter,
         vendor_reg_contract,
         vendor_prices_contract,
         market_contract,
@@ -632,15 +632,7 @@ def test_run_transaction_mix(
     }
 
     prod_quantity_pre = market_contract.functions.getQuantity(vendor, product_id).call()
-    txn_hash = pipe_graph_proxy_contract.functions.run(progex).transact({'value': wei_value})
+    txn_hash = pipe_graph_interpreter.functions.run(progex).transact({'value': wei_value})
     prod_quantity_post = market_contract.functions.getQuantity(vendor, product_id).call()
 
     assert prod_quantity_pre - quantity == prod_quantity_post
-
-    txn_hash2 = market_contract.functions.buy(vendor, buyer, product_id, quantity).transact({
-        'value': wei_value,
-    })
-    receipt1 = web3.eth.getTransactionReceipt(txn_hash)['cumulativeGasUsed']
-    receipt2 = web3.eth.getTransactionReceipt(txn_hash2)['cumulativeGasUsed']
-    print('test_run_transaction_mix run', receipt1)
-    print('test_run_transaction_mix buy', receipt2)
