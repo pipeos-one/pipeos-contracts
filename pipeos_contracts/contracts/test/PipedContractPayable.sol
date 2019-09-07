@@ -1,19 +1,19 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.4;
 pragma experimental ABIEncoderV2;
 
 
 interface PipeProxy {
 function proxy(
     address _to,
-    bytes input_bytes,
+    bytes calldata input_bytes,
     uint256 gas_value
 )
     payable
     external
-    returns (bytes);
+    returns (bytes memory);
 }
 
-contract PipedContract {
+contract PipedContractPayable {
     PipeProxy public pipe_proxy;
     address public getVendor_0 ;
     address public calculateQuantity_1 ;
