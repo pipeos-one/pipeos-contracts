@@ -2,7 +2,7 @@ pragma solidity ^0.5.4;
 pragma experimental ABIEncoderV2;
 
 
-interface PipeProxy {
+interface PipeProxyInterface {
 function proxy(
     address _to,
     bytes calldata input_bytes,
@@ -14,13 +14,13 @@ function proxy(
 }
 
 contract PipedContractPayable {
-    PipeProxy public pipe_proxy;
+    PipeProxyInterface public pipe_proxy;
     address public getVendor_0 ;
     address public calculateQuantity_1 ;
     address public buy_2 ;
 constructor(address _pipe_proxy, address _getVendor_0, address _calculateQuantity_1, address _buy_2
     ) public {
-        pipe_proxy = PipeProxy(_pipe_proxy);
+        pipe_proxy = PipeProxyInterface(_pipe_proxy);
     getVendor_0 = _getVendor_0;
 calculateQuantity_1 = _calculateQuantity_1;
 buy_2 = _buy_2;
