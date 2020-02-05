@@ -8,3 +8,6 @@ install_dev:
 
 lint:
 	flake8 pipeos_contracts/
+
+compile:
+	python setup.py compile_contracts
