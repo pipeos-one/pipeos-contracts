@@ -1,4 +1,4 @@
-pragma solidity ^0.5.4;
+pragma solidity ^0.6.2;
 
 
 /// @title Vendor Prices contract. This is where vendors register their product prices in the system.

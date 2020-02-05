@@ -1,4 +1,4 @@
-pragma solidity ^0.5.4;
+pragma solidity ^0.6.2;
 pragma experimental ABIEncoderV2;
 
 
@@ -32,7 +32,7 @@ contract PipeProxy {
               0  // expected output size set to 0, because we will use returndatasize
             )
 
-            output_len := returndatasize
+            output_len := returndatasize()
         }
 
         output = new bytes(output_len);
@@ -71,7 +71,7 @@ contract PipeProxy {
               0  // expected output size set to 0, because we will use returndatasize
             )
 
-            output_len := returndatasize
+            output_len := returndatasize()
         }
 
         output = new bytes(output_len);
